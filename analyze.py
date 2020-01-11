@@ -234,9 +234,68 @@ def calculate_message_frequency_by_month():
                             her_message_frequency[(month, year)] += 1
             print(overall_message_frequency)
         
-    with open('test.csv', 'w') as f:
+    with open('monthly.csv', 'w') as f:
         for key in overall_message_frequency.keys():
             f.write("%s,%s,%s,%s\n"%(key,overall_message_frequency[key], my_message_frequency[key], her_message_frequency[key]))
             
     return '====================\n' + str(my_message_frequency) + '\n' + str(her_message_frequency) + '\n' + str(overall_message_frequency)
-print(calculate_message_frequency_by_month())
+
+def calculate_message_frequency_by_hour():
+
+    overall_message_frequency = {}
+    my_message_frequency = {}
+    her_message_frequency = {}
+
+    are_my_messages = False
+    are_her_messages = False
+
+    for filename in os.listdir('data'):
+        if 'messages' in filename:
+            html = open('data/' + filename, 'r', encoding="utf8")
+            soup = BeautifulSoup(html, 'html.parser')
+            all_messages = soup.find_all(class_='message')
+
+            for message in all_messages:
+                message_soup = BeautifulSoup(str(message), 'html.parser')
+                classes = message_soup.div['class']
+                sender = message_soup.find_all(class_='from_name')
+                date = message_soup.find_all(class_='date')
+
+                if len(date) != 0:
+                    date_soup = BeautifulSoup(str(date[0]), 'html.parser')
+                    hour = date_soup.div['title'].split(' ')[1].split(':')[0]
+                    if hour not in overall_message_frequency:
+                        overall_message_frequency[hour] = 0
+                    overall_message_frequency[hour] += 1
+
+                    if len(classes) == 3 and len(sender) != 0:
+                        sender = sender[0].string
+                        if 'S' in sender:
+                            if hour not in my_message_frequency:
+                                my_message_frequency[hour] = 0
+                            my_message_frequency[hour] += 1
+                            are_my_messages = True
+                            are_her_messages = False
+                        elif 'Z' in sender:
+                            if hour not in her_message_frequency:
+                                her_message_frequency[hour] = 0
+                            her_message_frequency[hour] += 1
+                            are_my_messages = False
+                            are_her_messages = True
+                    if len(classes) == 4:
+                        if are_my_messages:
+                            if hour not in my_message_frequency:
+                                my_message_frequency[hour] = 0
+                            my_message_frequency[hour] += 1
+                        elif are_her_messages:
+                            if hour not in her_message_frequency:
+                                her_message_frequency[hour] = 0
+                            her_message_frequency[hour] += 1
+            print(overall_message_frequency)
+        
+    with open('hourly.csv', 'w') as f:
+        for key in overall_message_frequency.keys():
+            f.write("%s,%s,%s,%s\n"%(key,overall_message_frequency[key], my_message_frequency[key], her_message_frequency[key]))
+            
+    return '====================\n' + str(my_message_frequency) + '\n' + str(her_message_frequency) + '\n' + str(overall_message_frequency)
+print(calculate_message_frequency_by_hour())
